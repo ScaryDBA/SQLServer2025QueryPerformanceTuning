@@ -14,3 +14,12 @@ VALUES
 SELECT e.Col1
 FORM dbo.Example AS e; -- Generates an error because of 'FORM'
 
+--Listing 2-2
+
+SELECT soh.AccountNumber,
+       soh.OrderDate,
+       soh.PurchaseOrderNumber,
+       soh.SalesOrderNumber
+FROM Sales.SalesOrderHeader AS soh
+WHERE soh.SalesOrderID
+BETWEEN 62500 AND 62550;
