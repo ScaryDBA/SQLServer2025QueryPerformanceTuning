@@ -9,7 +9,7 @@ FROM Sales.SalesOrderHeader AS soh
     JOIN Production.Product AS p
         ON p.ProductID = sod.ProductID
 WHERE soh.CustomerID = 30052;
-GO 35
+--GO 35
 
 
 --Listing 4-2
