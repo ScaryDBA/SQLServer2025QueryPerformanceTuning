@@ -54,3 +54,18 @@ FROM sys.query_store_query AS qsq
         ON qsqt.query_text_id = qsq.query_text_id
 WHERE qsqt.query_sql_text LIKE 'SELECT soh.SalesOrderNumber%';
 
+
+--Listing 4-6
+SELECT pv.OnOrderQty,
+       a.City
+FROM Purchasing.ProductVendor AS pv,
+     Person.Address AS a
+WHERE a.City = 'Tulsa';
+
+
+
+--Listing 4-7
+SELECT o.*,
+       o2.*
+FROM sys.objects AS o,
+     sys.objects AS o2;
