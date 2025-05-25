@@ -154,7 +154,7 @@ FROM dbo.Test1 AS t1
     JOIN dbo.Test2 AS t2
         ON t1.Test1_C2 = t2.Test2_C2
 WHERE t1.Test1_C2 = 2;
-
+GO 50
 
 --Listing 5-12
 SELECT s.name,
@@ -176,3 +176,93 @@ WHERE t1.Test1_C2 = 1;
 
 --Listing 5-14
 ALTER DATABASE AdventureWorks SET AUTO_CREATE_STATISTICS OFF;
+
+
+
+--Listing 5-15
+DROP TABLE IF EXISTS dbo.Test1;
+GO
+CREATE TABLE dbo.Test1
+(
+    C1 INT,
+    C2 INT IDENTITY
+);
+INSERT INTO dbo.Test1
+(
+    C1
+)
+VALUES
+(1  );
+SELECT TOP 10000
+       IDENTITY(INT, 1, 1) AS n
+INTO #Nums
+FROM master.dbo.syscolumns sc1,
+     master.dbo.syscolumns sc2;
+INSERT INTO dbo.Test1
+(
+    C1
+)
+SELECT 2
+FROM #Nums;
+DROP TABLE #Nums;
+CREATE NONCLUSTERED INDEX FirstIndex ON dbo.Test1 (C1);
+
+
+
+--Listing 5-16
+DBCC SHOW_STATISTICS(Test1, FirstIndex);
+
+
+
+--Listing 5-17
+SELECT 1.0 / COUNT(DISTINCT C1)
+FROM dbo.Test1;
+
+
+
+--Listing 5-18
+DBCC SHOW_STATISTICS('Sales.SalesOrderDetail', 'IX_SalesOrderDetail_ProductID');
+
+
+
+--LIsting 5-19
+CREATE EVENT SESSION [CardinalityEstimation]
+ON SERVER
+    ADD EVENT sqlserver.auto_stats
+    (WHERE ([sqlserver].[database_name] = N'AdventureWorks')),
+    ADD EVENT sqlserver.query_optimizer_estimate_cardinality
+    (WHERE ([sqlserver].[database_name] = N'AdventureWorks')),
+    ADD EVENT sqlserver.sql_batch_completed
+    (WHERE ([sqlserver].[database_name] = N'AdventureWorks')),
+    ADD EVENT sqlserver.sql_batch_starting
+    (WHERE ([sqlserver].[database_name] = N'AdventureWorks'))
+    ADD TARGET package0.event_file
+    (SET filename = N'cardinalityestimation')
+WITH
+(
+    TRACK_CAUSALITY = ON
+);
+
+
+
+--Listing 5-20
+SELECT so.Description,
+       p.Name AS ProductName,
+       p.ListPrice,
+       p.Size,
+       pv.AverageLeadTime,
+       pv.MaxOrderQty,
+       v.Name AS VendorName
+FROM Sales.SpecialOffer AS so
+    JOIN Sales.SpecialOfferProduct AS sop
+        ON sop.SpecialOfferID = so.SpecialOfferID
+    JOIN Production.Product AS p
+        ON p.ProductID = sop.ProductID
+    JOIN Purchasing.ProductVendor AS pv
+        ON pv.ProductID = p.ProductID
+    JOIN Purchasing.Vendor AS v
+        ON v.BusinessEntityID = pv.BusinessEntityID
+WHERE so.DiscountPct > .15;
+
+
+
