@@ -319,3 +319,173 @@ WITH (DROP_EXISTING = ON);
 
 --Listing 5-26
 DROP INDEX Sales.SalesOrderHeader.IX_Test;
+
+
+
+--Listing 5-27
+ALTER DATABASE AdventureWorks SET COMPATIBILITY_LEVEL = 110;
+
+
+
+--Listing 5-28
+ALTER DATABASE SCOPED CONFIGURATION SET LEGACY_CARDINALITY_ESTIMATION = ON;
+
+
+
+--Listing 5-29
+SELECT p.Name,
+       p.Class
+FROM Production.Product AS p
+WHERE p.Color = 'Red'
+      AND p.DaysToManufacture > 15
+OPTION (USE HINT ('FORCE_LEGACY_CARDINALITY_ESTIMATION'));
+
+
+
+--Listing 5-30
+ALTER DATABASE AdventureWorks SET AUTO_CREATE_STATISTICS OFF;
+
+
+
+--Listing 5-31
+ALTER DATABASE AdventureWorks SET AUTO_UPDATE_STATISTICS OFF;
+
+
+
+--Listing 5-32
+ALTER DATABASE AdventureWorks SET AUTO_UPDATE_STATISTICS_ASYNC ON;
+
+
+
+--Listing 5-33
+USE AdventureWorks;
+EXEC sp_autostats
+    'HumanResources.Department',
+    'OFF';
+
+
+--lIsting 5-34
+EXEC sp_autostats
+    'HumanResources.Department',
+    'OFF',
+    AK_Department_Name;
+
+
+
+--Listing 5-35
+EXEC sp_autostats 'HumanResources.Department';
+
+
+
+
+--Listing 5-36
+EXEC sp_autostats
+    'HumanResources.Department',
+    'ON';
+EXEC sp_autostats
+    'HumanResources.Department',
+    'ON',
+    AK_Department_Name;
+
+
+
+--Listing 5-37
+UPDATE STATISTICS dbo.bigProduct
+WITH RESAMPLE,
+     INCREMENTAL = ON;
+
+
+
+
+--Listing 5-38
+ALTER DATABASE AdventureWorks SET AUTO_CREATE_STATISTICS OFF;
+ALTER DATABASE AdventureWorks SET AUTO_UPDATE_STATISTICS OFF;
+GO
+DROP TABLE IF EXISTS dbo.Test1;
+GO
+CREATE TABLE dbo.Test1
+(
+    C1 INT,
+    C2 INT,
+    C3 CHAR(50)
+);
+INSERT INTO dbo.Test1
+(
+    C1,
+    C2,
+    C3
+)
+VALUES
+(51, 1, 'C3'),
+(52, 1, 'C3');
+CREATE NONCLUSTERED INDEX iFirstIndex ON dbo.Test1 (C1, C2);
+SELECT TOP 10000
+       IDENTITY(INT, 1, 1) AS n
+INTO #Nums
+FROM master.dbo.syscolumns AS scl,
+     master.dbo.syscolumns AS sC2;
+INSERT INTO dbo.Test1
+(
+    C1,
+    C2,
+    C3
+)
+SELECT n % 50,
+       n,
+       'C3'
+FROM #Nums;
+DROP TABLE #Nums;
+
+
+--Listing 5-39
+SELECT t.C1,
+       t.C2,
+       t.C3
+FROM dbo.Test1 AS t
+WHERE t.C2 = 1;
+go 50
+
+
+--Listing 5-40
+CREATE STATISTICS Stats1 ON Test1(C2);
+
+
+
+--Listing 5-41
+DECLARE @Planhandle VARBINARY(64);
+SELECT @Planhandle = deqs.plan_handle
+FROM sys.dm_exec_query_stats AS deqs
+    CROSS APPLY sys.dm_exec_sql_text(deqs.sql_handle) AS dest
+WHERE dest.text = 'SELECT  *
+FROM    dbo.Test1
+WHERE   C2 = 1;';
+IF @Planhandle IS NOT NULL
+BEGIN
+    DBCC FREEPROCCACHE(@Planhandle);
+END;
+
+
+
+--Listing 5-42
+DBCC SHOW_STATISTICS (Test1, iFirstIndex);
+
+
+
+--Listing 5-43
+SELECT C1,
+       C2,
+       C3
+FROM dbo.Test1
+WHERE C1 = 51;
+go 50
+
+
+
+--Listing 5-44
+UPDATE STATISTICS Test1 iFirstIndex
+WITH FULLSCAN;
+
+
+--Listing 5-45
+ALTER DATABASE AdventureWorks SET AUTO_CREATE_STATISTICS ON;
+ALTER DATABASE AdventureWorks SET AUTO_UPDATE_STATISTICS ON;
