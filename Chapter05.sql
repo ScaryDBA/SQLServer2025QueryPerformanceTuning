@@ -266,3 +266,56 @@ WHERE so.DiscountPct > .15;
 
 
 
+--Listing 5-21
+SELECT p.Name,
+       p.Class
+FROM Production.Product AS p
+WHERE p.Color = 'Red'
+      AND p.DaysToManufacture > 15;
+
+
+
+--Listing 5-22
+SELECT s.name,
+       s.auto_created,
+       s.user_created,
+       s.filter_definition,
+       sc.column_id,
+       c.name AS ColumnName
+FROM sys.stats AS s
+    JOIN sys.stats_columns AS sc
+        ON sc.stats_id = s.stats_id
+           AND sc.object_id = s.object_id
+    JOIN sys.columns AS c
+        ON c.column_id = sc.column_id
+           AND c.object_id = s.object_id
+WHERE s.object_id = OBJECT_ID('Production.Product');
+
+
+--Listing 5-23
+CREATE NONCLUSTERED INDEX FirstIndex
+ON dbo.Test1 (
+                 C1,
+                 C2
+             )
+WITH (DROP_EXISTING = ON);
+
+
+
+--Listing 5-24
+CREATE INDEX IX_Test ON Sales.SalesOrderHeader (PurchaseOrderNumber);
+
+DBCC SHOW_STATISTICS('Sales.SalesOrderHeader', 'IX_Test');
+
+
+
+--Listing 5-25
+CREATE INDEX IX_Test
+ON Sales.SalesOrderHeader (PurchaseOrderNumber)
+WHERE PurchaseOrderNumber IS NOT NULL
+WITH (DROP_EXISTING = ON);
+
+
+
+--Listing 5-26
+DROP INDEX Sales.SalesOrderHeader.IX_Test;
