@@ -80,9 +80,65 @@ FROM sys.query_store_plan AS qsp
            AND qsws.plan_id = qsrs.plan_id
            AND qsws.execution_type = qsrs.execution_type
            AND qsws.runtime_stats_interval_id = qsrs.runtime_stats_interval_id
-WHERE qsp.plan_id = 56
+WHERE qsp.plan_id = 11
       AND @CompareTime BETWEEN qsrsi.start_time
                        AND     qsrsi.end_time;
+
+
+--Listing 6-7
+WITH QSAggregate
+AS (SELECT qsrs.plan_id,
+           SUM(qsrs.count_executions) AS CountExecutions,
+           AVG(qsrs.avg_duration) AS AvgDuration,
+           AVG(qsrs.stdev_duration) AS StDevDuration,
+           qsws.wait_category_desc,
+           AVG(qsws.avg_query_wait_time_ms) AS AvgQueryWaitTime,
+           AVG(qsws.stdev_query_wait_time_ms) AS StDevQueryWaitTime
+    FROM sys.query_store_runtime_stats AS qsrs
+        LEFT JOIN sys.query_store_wait_stats AS qsws
+            ON qsws.plan_id = qsrs.plan_id
+               
+AND qsws.runtime_stats_interval_id = qsrs.runtime_stats_interval_id
+    GROUP BY qsrs.plan_id,
+             qsws.wait_category_desc)
+SELECT CAST(qsp.query_plan AS XML),
+       qsa.*
+FROM sys.query_store_plan AS qsp
+    JOIN QSAggregate AS qsa
+        ON qsa.plan_id = qsp.plan_id
+WHERE qsp.plan_id = 11;
+
+
+
+--Listing 6-8
+ALTER DATABASE AdventureWorks SET QUERY_STORE CLEAR;
+
+
+--Listing 6-9
+EXEC sys.sp_query_store_remove_query @query_id = @QueryId;
+EXEC sys.sp_query_store_remove_plan @plan_id = @PlanID;
+
+
+
+--Listing 6-10
+EXEC sys.sp_query_store_flush_db;
+
+
+
+--Listing 6-11
+SELECT *
+FROM sys.database_query_store_options AS dqso;
+
+
+--Listing 6-12
+ALTER DATABASE AdventureWorks SET QUERY_STORE (MAX_STORAGE_SIZE_MB = 200);
+
+
+
+--Listing 6-13
+
+
+
 
 
 
