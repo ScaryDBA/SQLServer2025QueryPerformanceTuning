@@ -42,6 +42,48 @@ WHERE a.AddressID = 72;
 
 
 
+--Listing 6-5
+SELECT qsq.query_id,
+       qsq.query_hash,
+       qsqt.query_sql_text,
+       qsq.query_parameterization_type
+FROM sys.query_store_query_text AS qsqt
+    JOIN sys.query_store_query AS qsq
+        ON qsq.query_text_id = qsqt.query_text_id
+    JOIN sys.fn_stmt_sql_handle_from_sql_stmt(
+             'SELECT a.AddressID,
+       a.AddressLine1
+FROM Person.Address AS a
+WHERE a.AddressID = 72;',
+             2)  AS fsshfss
+        ON fsshfss.statement_sql_handle = qsqt.statement_sql_handle;
+
+
+
+
+--Listing 6-6
+DECLARE @CompareTime DATETIME = '2025-05-29 12:22';
+SELECT CAST(qsp.query_plan AS XML),
+       qsrs.count_executions,
+       qsrs.avg_duration,
+       qsrs.stdev_duration,
+       qsws.wait_category_desc,
+       qsws.avg_query_wait_time_ms,
+       qsws.stdev_query_wait_time_ms
+FROM sys.query_store_plan AS qsp
+    JOIN sys.query_store_runtime_stats AS qsrs
+        ON qsrs.plan_id = qsp.plan_id
+    JOIN sys.query_store_runtime_stats_interval AS qsrsi
+        ON qsrsi.runtime_stats_interval_id = qsrs.runtime_stats_interval_id
+    LEFT JOIN sys.query_store_wait_stats AS qsws
+        ON qsws.plan_id = qsrs.plan_id
+           AND qsws.plan_id = qsrs.plan_id
+           AND qsws.execution_type = qsrs.execution_type
+           AND qsws.runtime_stats_interval_id = qsrs.runtime_stats_interval_id
+WHERE qsp.plan_id = 56
+      AND @CompareTime BETWEEN qsrsi.start_time
+                       AND     qsrsi.end_time;
+
 
 
 
