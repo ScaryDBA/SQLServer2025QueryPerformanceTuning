@@ -136,6 +136,47 @@ ALTER DATABASE AdventureWorks SET QUERY_STORE (MAX_STORAGE_SIZE_MB = 200);
 
 
 --Listing 6-13
+EXEC sys.sp_query_store_force_plan 121, 11;
+
+
+
+--Listing 6-14
+EXEC sys.sp_query_store_set_hints 121, N'OPTION(OPTIMIZE FOR UNKOWN)';
+
+
+
+--Listing 6-15
+SELECT qsqh.query_hint_id,
+       qsqh.query_id,
+       qsqh.query_hint_text,
+       qsqh.source_desc
+FROM sys.query_store_query_hints AS qsqh;
+
+
+
+
+--Listing 6-16
+EXEC sp_query_store_clear_hints @query_id = 121;
+
+
+
+--Listing 6-17
+ALTER DATABASE SCOPED CONFIGURATION SET OPTIMIZED_PLAN_FORCING = OFF;
+
+
+
+--Listing 6-18
+SELECT qsqt.query_sql_text,
+       TRY_CAST(qsp.query_plan AS XML) AS query_plan,
+       qsp.is_forced_plan
+FROM sys.query_store_plan AS qsp
+    INNER JOIN sys.query_store_query AS qsq
+        ON qsp.query_id = qsq.query_id
+    INNER JOIN sys.query_store_query_text AS qsqt
+        ON qsq.query_text_id = qsqt.query_text_id
+WHERE qsp.has_compile_replay_script = 1;
+
+
 
 
 
