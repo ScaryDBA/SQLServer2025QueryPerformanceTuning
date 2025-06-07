@@ -112,5 +112,30 @@ RECONFIGURE;
 
 
 
+--Listing 7-8
+SELECT a.AddressLine1,
+       a.City,
+       a.StateProvinceID
+FROM Person.Address AS a
+WHERE a.AddressID = 42;
 
 
+SELECT c.usecounts,
+       c.cacheobjtype,
+       c.objtype,
+       t.text
+FROM sys.dm_exec_cached_plans AS c
+    CROSS APPLY sys.dm_exec_sql_text(c.plan_handle) AS t;
+
+
+
+--Listing 7-9
+SELECT a.AddressLine1,
+       a.City,
+       a.StateProvinceID
+FROM Person.Address AS a
+WHERE a.AddressID = 32509;
+
+
+
+DBCC FREEPROCCACHE();
