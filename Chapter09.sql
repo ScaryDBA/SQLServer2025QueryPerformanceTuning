@@ -172,4 +172,21 @@ SELECT e.BusinessEntityID,
 FROM HumanResources.Employee AS e WITH (INDEX(IX_Employee_Test))
 WHERE e.MaritalStatus = 'M'
       AND e.BirthDate = '1982-02-11';
+GO 50
+
+
+
+--Listing 9-15
+CREATE INDEX IX_Employee_Test
+ON HumanResources.Employee (
+                               BirthDate,
+                               MaritalStatus
+                           )
+WITH DROP_EXISTING;
+
+
+--Listing 9-16
+DROP INDEX IF EXISTS IX_Employee_Test ON HumanResources.Employee;
+
+
 
