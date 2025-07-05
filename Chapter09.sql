@@ -190,3 +190,202 @@ DROP INDEX IF EXISTS IX_Employee_Test ON HumanResources.Employee;
 
 
 
+--Listing 9-17
+CREATE INDEX IX_Address_Test ON Person.ADDRESS (City, PostalCode);
+
+
+
+--Listing 9-18
+SELECT A.AddressID,
+       A.City,
+       A.PostalCode
+FROM Person.ADDRESS AS A
+WHERE A.City = 'Dresden'
+GO 50
+
+
+--Listing 9-19
+SELECT A.AddressID,
+       A.City,
+       A.PostalCode
+FROM Person.ADDRESS AS A
+WHERE A.PostalCode = '01071';
+GO 50
+
+
+--Listing 9-20
+DROP INDEX IF EXISTS IX_Address_Test ON Person.ADDRESS;
+
+
+
+--Listing 9-21
+SELECT dl.DatabaseLogID,
+       dl.PostTime
+FROM dbo.DatabaseLog AS dl
+WHERE dl.DatabaseLogID = 115;
+
+
+--Listing 9-22
+SELECT d.DepartmentID,
+       d.ModifiedDate
+FROM HumanResources.Department AS d
+WHERE d.DepartmentID = 10;
+
+
+
+--Listing 9-23
+IF
+(
+    SELECT OBJECT_ID('Test1')
+) IS NOT NULL
+    DROP TABLE dbo.Test1;
+GO
+CREATE TABLE dbo.Test1
+(
+    C1 INT,
+    C2 INT
+);
+WITH Nums
+AS (SELECT TOP (20)
+           ROW_NUMBER() OVER (ORDER BY (SELECT 1)) AS n
+    FROM master.sys.all_columns ac1
+        CROSS JOIN master.sys.all_columns ac2)
+INSERT INTO dbo.Test1
+(
+    C1,
+    C2
+)
+SELECT n,
+       n + 1
+FROM Nums;
+CREATE CLUSTERED INDEX iClustered ON dbo.Test1 (C2);
+CREATE NONCLUSTERED INDEX iNonClustered ON dbo.Test1 (C1);
+
+
+
+--Listing 9-24
+SELECT i.name,
+       i.type_desc,
+       s.page_count,
+       s.record_count,
+       s.index_level
+FROM sys.indexes i
+    JOIN sys.dm_db_index_physical_stats(DB_ID(N'AdventureWorks'), OBJECT_ID(N'dbo.Test1'), NULL, NULL, 'DETAILED') AS s
+        ON i.index_id = s.index_id
+WHERE i.object_id = OBJECT_ID(N'dbo.Test1');
+
+
+--Listing 9-25
+DROP INDEX dbo.Test1.iClustered;
+ALTER TABLE dbo.Test1 ALTER COLUMN C2 CHAR(500);
+CREATE CLUSTERED INDEX iClustered ON dbo.Test1 (C2);
+
+
+--Listing 9-26
+IF
+(
+    SELECT OBJECT_ID('od')
+) IS NOT NULL
+    DROP TABLE dbo.od;
+GO
+SELECT pod.PurchaseOrderID,
+       pod.PurchaseOrderDetailID,
+       pod.DueDate,
+       pod.OrderQty,
+       pod.ProductID,
+       pod.UnitPrice,
+       pod.LineTotal,
+       pod.ReceivedQty,
+       pod.RejectedQty,
+       pod.StockedQty,
+       pod.ModifiedDate
+INTO dbo.od
+FROM Purchasing.PurchaseOrderDetail AS pod;
+
+
+--Listing 9-27
+SELECT od.PurchaseOrderID,
+       od.PurchaseOrderDetailID,
+       od.DueDate,
+       od.OrderQty,
+       od.ProductID,
+       od.UnitPrice,
+       od.LineTotal,
+       od.ReceivedQty,
+       od.RejectedQty,
+       od.StockedQty,
+       od.ModifiedDate
+FROM dbo.od
+WHERE od.ProductID
+BETWEEN 500 AND 510
+ORDER BY od.ProductID;
+GO 50
+
+
+--Listing 9-28
+CREATE CLUSTERED INDEX i1 ON od (ProductID);
+
+
+--Listing 9-29
+BEGIN TRAN;
+SET STATISTICS IO ON;
+UPDATE Sales.SpecialOfferProduct
+SET ProductID = 720
+WHERE SpecialOfferID = 1
+      AND ProductID = 721;
+SET STATISTICS IO OFF;
+ROLLBACK TRAN;
+
+
+--Listing 9-30
+CREATE NONCLUSTERED INDEX ixTest
+ON Sales.SpecialOfferProduct (ModifiedDate);
+
+
+--Listing 9-31
+DROP INDEX ixTest ON Sales.SpecialOfferProduct;
+
+
+
+--Listing 9-32
+--SET STATISTICS IO ON;
+SELECT bp.Name AS ProductName,
+       COUNT(bth.ProductID),
+       SUM(bth.Quantity),
+       AVG(bth.ActualCost)
+FROM dbo.bigProduct AS bp
+    JOIN dbo.bigTransactionHistory AS bth
+        ON bth.ProductID = bp.ProductID
+GROUP BY bp.Name;
+--GO 50
+--SET STATISTICS IO OFF;
+
+
+
+--Listing 9-33
+CREATE NONCLUSTERED COLUMNSTORE INDEX ix_csTest
+ON dbo.bigTransactionHistory (
+                                 ProductID,
+                                 Quantity,
+                                 ActualCost
+                             );
+
+
+
+--Listing 9-34
+SELECT a.AddressID,
+       a.AddressLine1,
+       a.AddressLine2,
+       a.City,
+       sp.Name AS StateProvinceName,
+       a.PostalCode
+FROM Person.Address AS a
+    JOIN Person.StateProvince AS sp
+        ON a.StateProvinceID = sp.StateProvinceID
+WHERE a.City = 'London';
+
+
+
+
+
+
