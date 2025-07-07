@@ -201,6 +201,60 @@ DROP INDEX IX_CompPage_Test ON Person.ADDRESS;
 
 
 --Listing 10-20
+CREATE NONCLUSTERED INDEX IX_Test
+ON Person.ADDRESS (
+                      City ASC,
+                      PostalCode DESC
+                  );
+
+
+
+
+--Listing 10-21
+BEGIN TRAN
+CREATE NONCLUSTERED INDEX IX_Test
+ON Person.Address(City);
+ROLLBACK TRAN
+
+
+--Listing 10-22
+CREATE NONCLUSTERED INDEX IX_Resumable
+ON Person.ADDRESS (
+                      City ASC,
+                      PostalCode DESC
+                  )
+WITH (RESUMABLE = ON, ONLINE = ON);
+
+
+
+--Listing 10-23
+SELECT o.NAME AS ObjectName,
+       i.NAME AS IndexName,
+       iro.sql_text,
+       iro.state_desc,
+       iro.start_time,
+       iro.last_pause_time,
+       iro.total_execution_time,
+       iro.percent_complete
+FROM sys.index_resumable_operations AS iro
+    JOIN sys.indexes AS i
+        ON i.OBJECT_ID = iro.OBJECT_ID
+           AND i.index_id = iro.index_id
+    JOIN sys.objects AS o
+        ON o.OBJECT_ID = i.OBJECT_ID;
+
+
+
+
+--Listing 10-24
+ALTER INDEX IX_Resumable ON Person.ADDRESS PAUSE;
+
+
+
+--Listing 10-25
+ALTER INDEX IX_Resumable ON Person.ADDRESS RESUME;
+ALTER INDEX IX_Resumable ON Person.ADDRESS ABORT;
+
 
 
 
