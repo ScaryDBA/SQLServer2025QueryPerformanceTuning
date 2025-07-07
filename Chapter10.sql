@@ -153,6 +153,65 @@ CREATE UNIQUE CLUSTERED INDEX iv ON Purchasing.IndexedView (ProductID);
 DROP VIEW Purchasing.IndexedView;
 
 
+--Listing 10-16
+CREATE NONCLUSTERED INDEX IX_Test
+ON Person.ADDRESS (
+                      City ASC,
+                      PostalCode ASC
+                  );
+
+
+--Listing 10-17
+CREATE NONCLUSTERED INDEX IX_CompRow_Test
+ON Person.ADDRESS (
+                      City,
+                      PostalCode
+                  )
+WITH (DATA_COMPRESSION = ROW);
+CREATE NONCLUSTERED INDEX IX_CompPage_Test
+ON Person.ADDRESS (
+                      City,
+                      PostalCode
+                  )
+WITH (DATA_COMPRESSION = PAGE);
+
+
+
+--Listing 10-18
+SELECT i.NAME,
+       i.type_desc,
+       s.page_count,
+       s.record_count,
+       s.index_level,
+       s.compressed_page_count
+FROM sys.indexes AS i
+    
+JOIN sys.dm_db_index_physical_stats(DB_ID(N'AdventureWorks'), 
+OBJECT_ID(N'Person.Address'), NULL, NULL, 'DETAILED') AS s
+        ON i.index_id = s.index_id
+WHERE i.OBJECT_ID = OBJECT_ID(N'Person.Address');
+
+
+
+--Listing 10-19
+DROP INDEX IX_Test ON Person.ADDRESS;
+DROP INDEX IX_CompRow_Test ON Person.ADDRESS;
+DROP INDEX IX_CompPage_Test ON Person.ADDRESS;
+
+
+
+--Listing 10-20
+
+
+
+
+
+
+
+
+
+
+
 
 
 
