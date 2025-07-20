@@ -130,3 +130,87 @@ END;
 
 
 --Listing 14-14
+SELECT p.NAME,
+       dbo.ProductStandardCost(p.ProductID)
+FROM Production.Product AS p
+WHERE p.ProductNumber LIKE 'HL%';
+GO 50
+
+
+--Listing 14-15
+SELECT p.NAME,
+       pc.StandardCost
+FROM Production.Product AS p
+    CROSS APPLY
+(
+    SELECT TOP 1
+           pch.StandardCost
+    FROM Production.ProductCostHistory AS pch
+    WHERE pch.ProductID = p.ProductID
+    ORDER BY pch.StartDate DESC
+) AS pc
+WHERE p.ProductNumber LIKE 'HL%';
+GO 50
+
+--Listing 14-16
+SELECT s.NAME AS StoreName,
+       p.LastName + ', ' + p.FirstName
+FROM Sales.Store AS s
+    JOIN Sales.SalesPerson AS sp
+        ON s.SalesPersonID = sp.BusinessEntityID
+    JOIN HumanResources.Employee AS E
+        ON sp.BusinessEntityID = E.BusinessEntityID
+    JOIN Person.Person AS p
+        ON E.BusinessEntityID = p.BusinessEntityID;
+GO 50
+
+
+--Listing 14-17
+SELECT s.NAME AS StoreName,
+       p.LastName + ',   ' + p.FirstName
+FROM Sales.Store AS s
+    JOIN Sales.SalesPerson AS sp
+        ON s.SalesPersonID = sp.BusinessEntityID
+    JOIN HumanResources.Employee AS E
+        ON sp.BusinessEntityID = E.BusinessEntityID
+    JOIN Person.Person AS p
+        ON E.BusinessEntityID = p.BusinessEntityID
+OPTION (LOOP JOIN);
+GO 50
+
+
+
+--Listing 14-18
+SELECT s.NAME AS StoreName,
+       p.LastName + ',   ' + p.FirstName
+FROM Sales.Store AS s
+    INNER LOOP JOIN Sales.SalesPerson AS sp
+        ON s.SalesPersonID = sp.BusinessEntityID
+    JOIN HumanResources.Employee AS E
+        ON sp.BusinessEntityID = E.BusinessEntityID
+    JOIN Person.Person AS p
+        ON E.BusinessEntityID = p.BusinessEntityID;
+GO 50
+
+
+--Listing 14-19
+SELECT poh.EmployeeID,
+       poh.OrderDate
+FROM Purchasing.PurchaseOrderHeader AS poh WITH (INDEX(PK_PurchaseOrderHeader_PurchaseOrderID))
+WHERE poh.PurchaseOrderID * 2 = 3400;
+GO 50
+
+
+--Listing 14-20
+SELECT p.FirstName
+FROM Person.Person AS p
+WHERE p.FirstName < 'B'
+      OR p.FirstName >= 'C';
+SELECT p.MiddleName
+FROM Person.Person AS p
+WHERE p.MiddleName < 'B'
+      OR p.MiddleName >= 'C';
+
+
+
+
