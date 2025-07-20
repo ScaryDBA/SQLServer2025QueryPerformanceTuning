@@ -91,4 +91,42 @@ FROM Sales.SalesOrderHeader AS soh
         ON soh.SalesOrderID = sod.SalesOrderID
 WHERE DATEPART(yy, soh.OrderDate) = 2008
       AND DATEPART(mm, soh.OrderDate) = 4;
+GO 50
 
+
+--Listing 14-11
+SELECT soh.SalesOrderID,
+       soh.OrderDate
+FROM Sales.SalesOrderHeader AS soh
+    JOIN Sales.SalesOrderDetail AS sod
+        ON soh.SalesOrderID = sod.SalesOrderID
+WHERE soh.OrderDate >= '2008-04-01'
+      AND soh.OrderDate < '2008-05-01';
+GO 50
+
+
+--Listing 14-12
+DROP INDEX Sales.SalesOrderHeader.IndexTest;
+
+
+--Listing 14-13
+CREATE OR ALTER FUNCTION dbo.ProductStandardCost
+(
+    @ProductID INT
+)
+RETURNS MONEY
+AS
+BEGIN
+    DECLARE @Cost MONEY;
+    SELECT TOP 1
+           @Cost = pch.StandardCost
+    FROM Production.ProductCostHistory AS pch
+    WHERE pch.ProductID = @ProductID
+    ORDER BY pch.StartDate DESC;
+    IF @Cost IS NULL
+        SET @Cost = 0;
+    RETURN @Cost;
+END;
+
+
+--Listing 14-14
