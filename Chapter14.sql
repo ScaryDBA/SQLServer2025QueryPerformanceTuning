@@ -206,10 +206,103 @@ SELECT p.FirstName
 FROM Person.Person AS p
 WHERE p.FirstName < 'B'
       OR p.FirstName >= 'C';
+
 SELECT p.MiddleName
 FROM Person.Person AS p
 WHERE p.MiddleName < 'B'
       OR p.MiddleName >= 'C';
+
+
+--Listing 14-21
+SELECT p.MiddleName
+FROM Person.Person AS p
+WHERE p.MiddleName < 'B'
+      OR p.MiddleName >= 'C'
+      OR p.MiddleName IS NULL;
+
+
+
+--Listing 14-22
+CREATE INDEX TestIndex1 ON Person.Person (MiddleName);
+CREATE INDEX TestIndex2 ON Person.Person (FirstName);
+
+
+
+SELECT p.FirstName
+FROM Person.Person AS p
+WHERE p.FirstName < 'B'
+      OR p.FirstName >= 'C';
+GO 50
+SELECT p.MiddleName
+FROM Person.Person AS p
+WHERE p.MiddleName < 'B'
+      OR p.MiddleName >= 'C'
+      OR p.MiddleName IS NULL;
+GO 50
+
+
+--Listing 14-23
+DROP INDEX TestIndex1 ON Person.Person;
+DROP INDEX TestIndex2 ON Person.Person;
+
+
+--Listing 14-24
+ALTER TABLE Sales.SalesOrderDetail WITH CHECK
+ADD CONSTRAINT CK_SalesOrderDetail_UnitPrice CHECK ((
+                                             UnitPrice >= (0.00)
+                                                   ));
+
+
+--Listing 14-25
+SELECT soh.OrderDate,
+       soh.ShipDate,
+       sod.OrderQty,
+       sod.UnitPrice,
+       p.Name AS ProductName
+FROM Sales.SalesOrderHeader AS soh
+    JOIN Sales.SalesOrderDetail AS sod
+        ON sod.SalesOrderID = soh.SalesOrderID
+    JOIN Production.Product AS p
+        ON p.ProductID = sod.ProductID
+WHERE p.Name = 'Water Bottle - 30 oz.'
+      AND sod.UnitPrice < $0.0;
+
+
+--Listing 14-26
+IF EXISTS
+(
+    SELECT *
+    FROM sys.foreign_keys
+    
+WHERE OBJECT_ID = OBJECT_ID(N'[Person].[FK_Address_StateProvince_StateProvinceID]')
+          AND parent_object_id = OBJECT_ID(N'[Person].[Address]')
+)
+    ALTER TABLE Person.ADDRESS
+    DROP CONSTRAINT FK_Address_StateProvince_StateProvinceID;
+
+
+--Listing 14-27
+SELECT A.AddressID,
+       sp.StateProvinceID
+FROM Person.ADDRESS AS A
+    JOIN Person.StateProvince AS sp
+        ON A.StateProvinceID = sp.StateProvinceID
+WHERE A.AddressID = 27234;
+
+--NOTE, Address.StateProvinceID
+SELECT A.AddressID,
+       A.StateProvinceID
+FROM Person.ADDRESS AS A
+    JOIN Person.StateProvince AS sp
+        ON A.StateProvinceID = sp.StateProvinceID
+WHERE A.AddressID = 27234;
+
+
+--Listing 14-28
+ALTER TABLE Person.ADDRESS WITH CHECK
+ADD CONSTRAINT FK_Address_StateProvince_StateProvinceID
+    FOREIGN KEY (StateProvinceID)
+    REFERENCES Person.StateProvince (StateProvinceID);
 
 
 
