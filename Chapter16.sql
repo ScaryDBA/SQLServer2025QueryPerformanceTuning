@@ -104,4 +104,28 @@ SELECT OBJECT_NAME(1476200309),
        DB_NAME(5);
 
 
+--Listing 16-7
+CREATE CLUSTERED INDEX TestIndex ON dbo.LockTest (C1);
+
+
+
+--Listing 16-8
+BEGIN TRAN;
+DELETE dbo.LockTest
+WHERE C1 = 1;
+SELECT dtl.request_session_id,
+       dtl.resource_database_id,
+       dtl.resource_associated_entity_id,
+       dtl.resource_type,
+       dtl.resource_description,
+       dtl.request_mode,
+       dtl.request_status
+FROM sys.dm_tran_locks AS dtl
+WHERE dtl.request_session_id = @@SPID;
+ROLLBACK;
+
+
+--Listing 16-9
+ALTER TABLE schema.table
+SET (LOCK_ESCALATION = DISABLE);
 

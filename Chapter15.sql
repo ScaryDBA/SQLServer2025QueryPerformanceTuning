@@ -196,19 +196,7 @@ ALTER DATABASE <DatabaseName> SET READ_ONLY;
 
 
 --Listing 15-16
-ALTER DATABASE <DatabaseName> SET READ_WRITE;
 
-
---Listing 15-17
-ALTER DATABASE AdventureWorks SET READ_COMMITTED_SNAPSHOT ON;
-
-
---Listing 15-18
-DELETE Sales.SalesOrderDetail
-FROM Sales.SalesOrderDetail AS sod WITH (NOLOCK)
-    JOIN Production.Product AS p WITH (NOLOCK)
-        ON sod.ProductID = p.ProductID
-           AND p.ProductID = 0;
 
 
 
