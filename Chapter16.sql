@@ -129,3 +129,74 @@ ROLLBACK;
 ALTER TABLE schema.table
 SET (LOCK_ESCALATION = DISABLE);
 
+
+--Listing from Table 16-1
+--Connection 1
+BEGIN TRANSACTION LockTran2;
+--Retain an  (S) lock on the resource
+SELECT *
+FROM Sales.Currency AS c WITH (REPEATABLEREAD)
+WHERE c.CurrencyCode = 'EUR';
+--Allow DMVs to be executed before second step of
+-- UPDATE statement is executed by transaction LockTran1
+WAITFOR DELAY '00:00:10';
+COMMIT;
+
+
+--Connection 2
+BEGIN TRANSACTION LockTran1;
+UPDATE Sales.Currency
+SET Name = 'Euro'
+WHERE CurrencyCode = 'EUR';
+-- NOTE: We're not committing yet
+
+
+
+--Connection 3
+SELECT dtl.request_session_id,
+       dtl.resource_database_id,
+       dtl.resource_associated_entity_id,
+       dtl.resource_type,
+       dtl.resource_description,
+       dtl.request_mode,
+       dtl.request_status
+FROM sys.dm_tran_locks AS dtl
+ORDER BY dtl.request_session_id;
+--wait 10 seconds
+SELECT dtl.request_session_id,
+       dtl.resource_database_id,
+       dtl.resource_associated_entity_id,
+       dtl.resource_type,
+       dtl.resource_description,
+       dtl.request_mode,
+       dtl.request_status
+FROM sys.dm_tran_locks AS dtl
+ORDER BY dtl.request_session_id;
+COMMIT;
+
+
+
+--Listing 16-10
+BEGIN TRAN;
+DELETE Sales.Currency
+WHERE CurrencyCode = 'ALL';
+SELECT tl.request_session_id,
+       tl.resource_database_id,
+       tl.resource_associated_entity_id,
+       tl.resource_type,
+       tl.resource_description,
+       tl.request_mode,
+       tl.request_status
+FROM sys.dm_tran_locks AS tl;
+ROLLBACK TRAN;
+
+
+
+--Listing 16-11
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+
+--Listing 16-12
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+
