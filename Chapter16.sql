@@ -200,3 +200,31 @@ SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 
 
+--Listing 16-13
+ALTER DATABASE AdventureWorks SET READ_COMMITTED_SNAPSHOT ON;
+
+
+--Listing 16-14
+BEGIN TRANSACTION;
+SELECT p.Color
+FROM Production.Product AS p
+WHERE p.ProductID = 711;
+
+--COMMIT
+
+
+--Listing 16-15
+--Run in a separate connection
+BEGIN TRANSACTION;
+UPDATE Production.Product
+SET Color = 'Coyote'
+WHERE ProductID = 711;
+--test that change
+SELECT p.Color
+FROM Production.Product AS p
+WHERE p.ProductID = 711;
+
+
+
+
+
