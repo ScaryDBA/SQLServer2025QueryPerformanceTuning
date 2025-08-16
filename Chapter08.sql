@@ -59,6 +59,9 @@ WITH
 (
     TRACK_CAUSALITY = ON
 );
+GO
+ALTER EVENT SESSION QueryAndRecompile ON SERVER STATE = START;
+
 
 
 --Listing 8-6
