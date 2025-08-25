@@ -253,6 +253,212 @@ SELECT AddressID,
 FROM Person.ADDRESS
 WHERE StateProvinceID = 79
       AND City = N'Redmond';
+GO 16
+
+
+--Listing 21-10
+SELECT qsqt.query_sql_text,
+       CAST(qsp.query_plan AS XML) AS queryplan,
+       qspf.feature_id,
+       qspf.feature_desc,
+       qspf.feedback_data,
+       qspf.STATE,
+       qspf.state_desc
+FROM sys.query_store_plan_feedback AS qspf
+    JOIN sys.query_store_plan AS qsp
+        ON qsp.plan_id = qspf.plan_id
+    JOIN sys.query_store_query AS qsq
+        ON qsq.query_id = qsp.query_id
+    JOIN sys.query_store_query_text AS qsqt
+        ON qsqt.query_text_id = qsq.query_text_id;
+
+
+--Listing 21-11
+SELECT TOP (100)
+       bp.Name,
+       bp.ProductNumber,
+       bth.Quantity,
+       bth.ActualCost
+FROM dbo.bigProduct AS bp
+    JOIN dbo.bigTransactionHistory AS bth
+        ON bth.ProductID = bp.ProductID
+WHERE bth.Quantity = 10
+      AND bth.ActualCost > 357
+        ORDER BY bp.Name;
+GO 17
+
+
+--Listing 21-12
+--intentionally using SELECT *
+SELECT *
+FROM dbo.bigTransactionHistory AS bth
+    JOIN dbo.bigProduct AS bp
+        ON bp.ProductID = bth.ProductID
+WHERE bth.Quantity = 10
+      AND bth.ActualCost > 357;
+GO 17
+
+
+--Listing 21-13
+ALTER DATABASE SCOPED CONFIGURATION SET DOP_FEEDBACK = ON;
+
+
+--Listing 21-14
+CREATE EVENT SESSION [DOPFeedback]
+ON SERVER
+    ADD EVENT sqlserver.dop_feedback_eligible_query(),
+    ADD EVENT sqlserver.dop_feedback_provided(),
+    ADD EVENT sqlserver.dop_feedback_reverted(),
+    ADD EVENT sqlserver.dop_feedback_validation(),
+    ADD EVENT sqlserver.sql_batch_completed();
+GO
+ALTER EVENT SESSION DOPFeedback ON SERVER STATE = START;
 
 
 
+--Listing 21-15
+SELECT COUNT(DISTINCT bth.TransactionID)
+FROM dbo.bigTransactionHistory AS bth
+GROUP BY bth.TransactionDate,
+         bth.ActualCost;
+GO
+SELECT APPROX_COUNT_DISTINCT(bth.TransactionID)
+FROM dbo.bigTransactionHistory AS bth
+GROUP BY bth.TransactionDate,
+         bth.ActualCost;
+GO
+
+
+--Listing 21-16
+SELECT DISTINCT
+       bp.NAME,
+       
+PERCENTILE_CONT(0.5)WITHIN GROUP(ORDER BY bth.ActualCost) OVER (PARTITION BY bp.NAME) AS MedianCont,
+       
+PERCENTILE_DISC(0.5)WITHIN GROUP(ORDER BY bth.ActualCost) OVER (PARTITION BY bp.NAME) AS MedianDisc
+FROM dbo.bigTransactionHistory AS bth
+    JOIN dbo.bigProduct AS bp
+        ON bp.ProductID = bth.ProductID
+WHERE bth.Quantity > 75
+ORDER BY bp.Name;
+GO
+SELECT bp.NAME,
+       
+APPROX_PERCENTILE_CONT(0.5)WITHIN GROUP(ORDER BY bth.ActualCost) AS MedianCont,
+       
+APPROX_PERCENTILE_DISC(0.5)WITHIN GROUP(ORDER BY bth.ActualCost) AS MedianDisc
+FROM dbo.bigTransactionHistory AS bth
+    JOIN dbo.bigProduct AS bp
+        ON bp.ProductID = bth.ProductID
+WHERE bth.Quantity > 75
+GROUP BY bp.NAME
+ORDER BY bp.Name;
+GO
+
+
+--Listing 21-17
+--Disable deferred compilation to see the old behavior
+ALTER DATABASE SCOPED CONFIGURATION SET DEFERRED_COMPILATION_TV = OFF;
+GO
+DECLARE @HeaderInfo TABLE
+(
+    SalesOrderID INT,
+    SalesOrderNumber NVARCHAR(25)
+);
+INSERT @HeaderInfo
+(
+    SalesOrderID,
+    SalesOrderNumber
+)
+SELECT soh.SalesOrderID,
+       soh.SalesOrderNumber
+FROM Sales.SalesOrderHeader AS soh
+WHERE soh.DueDate > '6/1/2014';
+SELECT hi.SalesOrderNumber,
+       sod.LineTotal
+FROM @HeaderInfo AS hi
+    JOIN Sales.SalesOrderDetail AS sod
+        ON sod.SalesOrderID = hi.SalesOrderID;
+GO
+--Enabled deferred compilation
+ALTER DATABASE SCOPED CONFIGURATION SET DEFERRED_COMPILATION_TV = ON;
+GO
+DECLARE @HeaderInfo TABLE
+(
+    SalesOrderID INT,
+    SalesOrderNumber NVARCHAR(25)
+);
+INSERT @HeaderInfo
+(
+    SalesOrderID,
+    SalesOrderNumber
+)
+SELECT soh.SalesOrderID,
+       soh.SalesOrderNumber
+FROM Sales.SalesOrderHeader AS soh
+WHERE soh.DueDate > '6/1/2014';
+SELECT hi.SalesOrderNumber,
+       sod.LineTotal
+FROM @HeaderInfo AS hi
+    JOIN Sales.SalesOrderDetail AS sod
+        ON sod.SalesOrderID = hi.SalesOrderID;
+
+
+--Listing 21-18
+CREATE OR ALTER FUNCTION dbo.ufnGetProductStandardCost
+(
+    @ProductID int,
+    @OrderDate datetime
+)
+RETURNS money
+AS
+-- Returns the standard cost for the product on a specific date.
+BEGIN
+    DECLARE @StandardCost money;
+    SELECT @StandardCost = pch.StandardCost
+    FROM Production.Product p
+        INNER JOIN Production.ProductCostHistory pch
+            ON p.ProductID = pch.ProductID
+               AND p.ProductID = @ProductID
+               AND @OrderDate
+               
+BETWEEN pch.StartDate AND COALESCE(pch.EndDate, CONVERT(datetime, '99991231', 112)); -- Make sure we get all the prices!
+    RETURN @StandardCost;
+END;
+
+
+--Listing 21-19
+SELECT sm.is_inlineable
+FROM sys.sql_modules AS sm
+    JOIN sys.objects AS o
+        ON o.OBJECT_ID = sm.OBJECT_ID
+WHERE o.NAME = 'ufnGetProductStandardCost';
+
+
+
+--Listing 21-20
+ALTER DATABASE SCOPED CONFIGURATION SET TSQL_SCALAR_UDF_INLINING = OFF;
+GO
+--not inline
+SELECT sod.LineTotal,
+       dbo.ufnGetProductStandardCost(sod.ProductID, soh.OrderDate)
+FROM Sales.SalesOrderDetail AS sod
+    JOIN Production.Product AS p
+        ON p.ProductID = sod.ProductID
+    JOIN Sales.SalesOrderHeader AS soh
+        ON soh.SalesOrderID = sod.SalesOrderID
+WHERE sod.LineTotal > 1000;
+GO 
+--Enable scalar inline
+ALTER DATABASE SCOPED CONFIGURATION SET TSQL_SCALAR_UDF_INLINING = ON;
+GO
+--inline
+SELECT sod.LineTotal,
+       dbo.ufnGetProductStandardCost(sod.ProductID, soh.OrderDate)
+FROM Sales.SalesOrderDetail AS sod
+    JOIN Production.Product AS p
+        ON p.ProductID = sod.ProductID
+    JOIN Sales.SalesOrderHeader AS soh
+        ON soh.SalesOrderID = sod.SalesOrderID
+WHERE sod.LineTotal > 1000;
+GO 
